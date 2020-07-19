@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Text;
+﻿using System.Drawing;
 
 namespace BadgeReader
 {
     public static class ImageHelper
     {
-
         public static Color GetPixel(this FastBitmap fbitmap, int y, int x)
         {
             unsafe
@@ -111,7 +107,7 @@ namespace BadgeReader
 
         public static Bitmap Binarilization(this Bitmap grayScaledBitmap, int thresholdLeft, int thresholdRight, int thresholdX)
         {
-            var bmp = new Bitmap(grayScaledBitmap); // new Bitmap(grayScaledBitmap.Width, grayScaledBitmap.Height);
+            var bmp = new Bitmap(grayScaledBitmap);
             using (var fbitmap = new FastBitmap(bmp, 0, 0, bmp.Width, bmp.Height))
             {
                 unsafe
@@ -133,7 +129,7 @@ namespace BadgeReader
 
         public static Bitmap ReverseBinarilization(this Bitmap grayScaledBitmap, int threshold, bool textInWhite = false)
         {
-            var bmp = new Bitmap(grayScaledBitmap); // new Bitmap(grayScaledBitmap.Width, grayScaledBitmap.Height);
+            var bmp = new Bitmap(grayScaledBitmap);
             using (var fbitmap = new FastBitmap(bmp, 0, 0, bmp.Width, bmp.Height))
             {
                 unsafe

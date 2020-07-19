@@ -31,7 +31,7 @@ namespace BadgeReader.Tests
                     var map = new Map();
 
                     var dots = posRetriever.PrintDots(croppedImg, map.MapMatrix);
-                    var results = posRetriever.ReadDots(dots);
+                    var results = PosRetriever.ReadDots(dots);
 
                     results = results.OrderBy(r => r.Position.X).ThenBy(r => r.Position.Y).ToList();
                     var expectedResults = JsonConvert.DeserializeObject<List<Badge>>(File.ReadAllText(dir + fileInfo.Name + ".json")).OrderBy(r => r.Position.X).ThenBy(r => r.Position.Y).ToList();

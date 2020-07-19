@@ -18,13 +18,6 @@ namespace BadgeReader
         public BadgeType BadgeType { get; set; }
     }
 
-    public class PointsResult
-    {
-        public Bitmap Image { get; set; }
-
-        public int[,] DotMatrix { get; set; }
-    }
-
     public class PosRetriever
     {
         public static bool Debug { get; set; }
@@ -63,15 +56,15 @@ namespace BadgeReader
             }
         }
 
-        public List<Badge> ReadDots(int[,] processedMatrix)
+        public static List<Badge> ReadDots(int[,] processedMatrix)
         {
             // 0 -> grey
-            // 1/4 -> orange
-            // 3 -> red
-            // 2 -> green
-            // 5 -> used
-            // 6 -> shared / do not mark as invalid
-            // 7 -> edged & used
+            // 1/4 -> orange / covered
+            // 3 -> red / unused
+            // 2 -> green / available / unused
+            // 5 -> processed
+            // 6 -> dedicate border / will only be processed once
+            // 7 -> dedicate border / already processed
             var badges = new List<Badge>();
 
             for (var x = processedMatrix.GetLength(1) - 1; x >= 0; --x)
@@ -148,7 +141,6 @@ namespace BadgeReader
             return value == 1 || value == 4 || value == 6;
         }
 
-
         public int[,] PrintDots(Bitmap bitmap, int[,] mapMatrix)
         {
             var colouredMapMatrix = new int[mapMatrix.GetLength(0), mapMatrix.GetLength(1)];
@@ -156,8 +148,26 @@ namespace BadgeReader
             var pixelHeight = (double) bitmap.Height / (mapMatrix.GetLength(0) - 1);
             var pixelWidth = (double) bitmap.Width / (mapMatrix.GetLength(1) - 1);
             var matrixGrey = bitmap.GetGrayScaleMatrix();
+            
+            var ratio = pixelHeight / pixelWidth;
 
             // check occupied available points
+            ProcessAvailablePoints(bitmap, mapMatrix, pixelHeight, pixelWidth, matrixGrey, colouredMapMatrix);
+            
+            ProcessRedPoints(bitmap, mapMatrix, pixelHeight, pixelWidth, colouredMapMatrix, ratio, matrixGrey);
+
+            // special marking for non-shared left edge
+            ProcessSharedBorder(bitmap, mapMatrix, pixelHeight, pixelWidth, colouredMapMatrix, ratio, matrixGrey);
+
+            if (Debug)
+                bitmap.Save(DebugDir + @"\points.jpg");
+
+            return colouredMapMatrix;
+        }
+
+        private static void ProcessAvailablePoints(Bitmap bitmap, int[,] mapMatrix, double pixelHeight, double pixelWidth,
+            int[,] matrixGrey, int[,] colouredMapMatrix)
+        {
             for (var y = 0; y < mapMatrix.GetLength(0); ++y)
             for (var x = 0; x < mapMatrix.GetLength(1); ++x)
             {
@@ -182,12 +192,12 @@ namespace BadgeReader
                         var posN = (int) Math.Round(n, 0);
                         if (posM < 0 || posM >= bitmap.Height || posN < 0 || posN >= bitmap.Width)
                             continue;
-                        
+
                         if (matrixGrey[posM, posN] == 0)
                         {
                             if (Math.Abs(posX - n) / pixelWidth < 0.7)
                                 occupiedPixelsTopLeft += 2;
-                            
+
                             occupiedPixelsTopLeft++;
                         }
                     }
@@ -197,8 +207,8 @@ namespace BadgeReader
                     for (double m = posY - pixelHeight + 1; m <= posY; m++)
                     for (double n = posX; n <= posX + pixelWidth - 2; n++)
                     {
-                        var posM = (int)Math.Round(m, 0);
-                        var posN = (int)Math.Round(n, 0);
+                        var posM = (int) Math.Round(m, 0);
+                        var posN = (int) Math.Round(n, 0);
                         if (posM < 0 || posM >= bitmap.Height || posN < 0 || posN >= bitmap.Width)
                             continue;
 
@@ -216,8 +226,8 @@ namespace BadgeReader
                     for (double m = posY; m <= posY + pixelHeight - 1; m++)
                     for (double n = posX - pixelWidth + 1; n <= posX; n++)
                     {
-                        var posM = (int)Math.Round(m, 0);
-                        var posN = (int)Math.Round(n, 0);
+                        var posM = (int) Math.Round(m, 0);
+                        var posN = (int) Math.Round(n, 0);
                         if (posM < 0 || posM >= bitmap.Height || posN < 0 || posN >= bitmap.Width)
                             continue;
 
@@ -235,8 +245,8 @@ namespace BadgeReader
                     for (double m = posY; m <= posY + pixelHeight - 1; m++)
                     for (double n = posX; n <= posX + pixelWidth - 2; n++)
                     {
-                        var posM = (int)Math.Round(m, 0);
-                        var posN = (int)Math.Round(n, 0);
+                        var posM = (int) Math.Round(m, 0);
+                        var posN = (int) Math.Round(n, 0);
                         if (posM < 0 || posM >= bitmap.Height || posN < 0 || posN >= bitmap.Width)
                             continue;
 
@@ -250,13 +260,16 @@ namespace BadgeReader
                     }
 
                     double twoCellsThreshold = (pixelHeight - 1) * (pixelWidth - 1) * 2 * 0.2;
-                    if (occupiedPixelsTopLeft + occupiedPixelsTopRight + occupiedPixelsBottomLeft + occupiedPixelsBottomRight > (pixelHeight - 1) * (pixelWidth - 1) * 4 * 0.1)
+                    if (occupiedPixelsTopLeft + occupiedPixelsTopRight + occupiedPixelsBottomLeft + occupiedPixelsBottomRight >
+                        (pixelHeight - 1) * (pixelWidth - 1) * 4 * 0.1)
                     {
                         colouredMapMatrix[y, x] = 1; // occupied
                         bitmap.SetPixel(posX, posY, Color.Orange);
-                    } 
-                    else if (occupiedPixelsTopLeft + occupiedPixelsTopRight > twoCellsThreshold || occupiedPixelsTopLeft + occupiedPixelsBottomLeft > twoCellsThreshold ||
-                             occupiedPixelsBottomRight + occupiedPixelsTopRight > twoCellsThreshold || occupiedPixelsBottomLeft + occupiedPixelsBottomRight > twoCellsThreshold)
+                    }
+                    else if (occupiedPixelsTopLeft + occupiedPixelsTopRight > twoCellsThreshold ||
+                             occupiedPixelsTopLeft + occupiedPixelsBottomLeft > twoCellsThreshold ||
+                             occupiedPixelsBottomRight + occupiedPixelsTopRight > twoCellsThreshold ||
+                             occupiedPixelsBottomLeft + occupiedPixelsBottomRight > twoCellsThreshold)
                     {
                         colouredMapMatrix[y, x] = 1; // occupied
                         bitmap.SetPixel(posX, posY, Color.Orange);
@@ -282,11 +295,85 @@ namespace BadgeReader
                     }
                 }
             }
+        }
+
+        private static void ProcessSharedBorder(Bitmap bitmap, int[,] mapMatrix, double pixelHeight, double pixelWidth,
+            int[,] colouredMapMatrix, double ratio, int[,] matrixGrey)
+        {
+            for (var y = 1; y < mapMatrix.GetLength(0); ++y)
+            for (var x = 4; x < mapMatrix.GetLength(1); ++x)
+            {
+                var posY = (int) Math.Round(y * pixelHeight, 0);
+                var posX = (int) Math.Round(x * pixelWidth, 0);
+                if (posX >= bitmap.Width)
+                    posX = bitmap.Width - 1;
+                if (posY >= bitmap.Height)
+                    posY = bitmap.Height - 1;
 
 
-            var ratio = pixelHeight / pixelWidth;
+                if (IsCovered(colouredMapMatrix[y, x]))
+                {
+                    if (x == 36 && y == 17)
+                        Console.Write(true);
 
-            // Re-mark red points
+                    var occupiedPixelsTopLeft = 0;
+                    // Top Left Triangle
+                    for (var m = posY - pixelHeight; m < posY; m++)
+                    for (var n = posX - pixelWidth; n < posX - 2; n++)
+                    {
+                        if (Math.Abs((m - posY) / (n - posX + pixelWidth)) > ratio)
+                            continue; // Not in triangle
+
+                        var posM = (int) Math.Round(m, 0);
+                        var posN = (int) Math.Round(n, 0);
+                        if (posM < 0 || posM >= bitmap.Height || posN < 0 || posN >= bitmap.Width)
+                            continue;
+
+                        if (matrixGrey[posM, posN] == 0)
+                        {
+                            if (posX - n > pixelWidth * 0.3 && posX - n < pixelWidth * 0.7)
+                                occupiedPixelsTopLeft += 2;
+
+                            occupiedPixelsTopLeft++;
+                        }
+                    }
+
+
+                    // Bottom Left Triangle
+                    var occupiedPixelsBottomLeft = 0;
+                    for (double m = posY + 1; m < posY + pixelHeight; m++)
+                    for (var n = posX - pixelWidth; n < posX - 2; n++)
+                    {
+                        if (Math.Abs((m - posY) / (n - posX + pixelWidth)) > ratio)
+                            continue; // Not in triangle
+
+                        var posM = (int) Math.Round(m, 0);
+                        var posN = (int) Math.Round(n, 0);
+                        if (posM < 0 || posM >= bitmap.Height || posN < 0 || posN >= bitmap.Width)
+                            continue;
+
+                        if (matrixGrey[posM, posN] == 0)
+                        {
+                            if (posX - n > pixelWidth * 0.3 && posX - n < pixelWidth * 0.7)
+                                occupiedPixelsBottomLeft += 2;
+
+                            occupiedPixelsBottomLeft++;
+                        }
+                    }
+
+
+                    if (occupiedPixelsTopLeft + occupiedPixelsBottomLeft < pixelHeight * (pixelWidth - 1) * 0.25)
+                    {
+                        bitmap.SetPixel(posX, posY, Color.Blue);
+                        colouredMapMatrix[y, x] = 6; // dedicated
+                    }
+                }
+            }
+        }
+
+        private static void ProcessRedPoints(Bitmap bitmap, int[,] mapMatrix, double pixelHeight, double pixelWidth,
+            int[,] colouredMapMatrix, double ratio, int[,] matrixGrey)
+        {
             for (var y = 0; y < mapMatrix.GetLength(0); ++y)
             for (var x = 0; x < mapMatrix.GetLength(1); ++x)
             {
@@ -466,14 +553,15 @@ namespace BadgeReader
                     }
 
 
-                    if (occupiedPixelsTopLeft > pixelHeight * pixelWidth * 0.1 && occupiedPixelsBottomLeft > pixelHeight * pixelWidth * 0.1)
+                    if (occupiedPixelsTopLeft > pixelHeight * pixelWidth * 0.1 &&
+                        occupiedPixelsBottomLeft > pixelHeight * pixelWidth * 0.1)
                     {
                         bitmap.SetPixel(posX, posY, Color.Orange);
                         colouredMapMatrix[y, x] = 4; // covered
                         continue;
                     }
 
-                        if (occupiedPixelsTopLeft + occupiedPixelsBottomRight + occupiedPixelsBottomLeft +
+                    if (occupiedPixelsTopLeft + occupiedPixelsBottomRight + occupiedPixelsBottomLeft +
                         occupiedPixelsBottomRight > pixelHeight * pixelWidth * 4 * 0.1)
                     {
                         bitmap.SetPixel(posX, posY, Color.Orange);
@@ -481,84 +569,13 @@ namespace BadgeReader
                     }
                 }
             }
-
-            // special marking for non-shared left edge
-            for (var y = 1; y < mapMatrix.GetLength(0); ++y)
-            for (var x = 4; x < mapMatrix.GetLength(1); ++x)
-            {
-                var posY = (int) Math.Round(y * pixelHeight, 0);
-                var posX = (int) Math.Round(x * pixelWidth, 0);
-                if (posX >= bitmap.Width)
-                    posX = bitmap.Width - 1;
-                if (posY >= bitmap.Height)
-                    posY = bitmap.Height - 1;
-
-
-                if (IsCovered(colouredMapMatrix[y, x]))
-                {
-                    if (x == 36 && y == 17)
-                        Console.Write(true);
-
-                        var occupiedPixelsTopLeft = 0;
-                    // Top Left Triangle
-                    for (var m = posY - pixelHeight; m < posY; m++)
-                    for (var n = posX - pixelWidth; n < posX - 2; n++)
-                    {
-                        if (Math.Abs((m - posY) / (n - posX + pixelWidth)) > ratio)
-                            continue; // Not in triangle
-
-                        var posM = (int) Math.Round(m, 0);
-                        var posN = (int) Math.Round(n, 0);
-                        if (posM < 0 || posM >= bitmap.Height || posN < 0 || posN >= bitmap.Width)
-                            continue;
-
-                        if (matrixGrey[posM, posN] == 0)
-                        {
-                            if (posX - n > pixelWidth * 0.3 && posX - n < pixelWidth * 0.7)
-                                occupiedPixelsTopLeft += 2;
-
-                            occupiedPixelsTopLeft++;
-                        }
-                    }
-
-
-                    // Bottom Left Triangle
-                    var occupiedPixelsBottomLeft = 0;
-                    for (double m = posY + 1; m < posY + pixelHeight; m++)
-                    for (var n = posX - pixelWidth; n < posX - 2; n++)
-                    {
-                        if (Math.Abs((m - posY) / (n - posX + pixelWidth)) > ratio)
-                            continue; // Not in triangle
-
-                        var posM = (int) Math.Round(m, 0);
-                        var posN = (int) Math.Round(n, 0);
-                        if (posM < 0 || posM >= bitmap.Height || posN < 0 || posN >= bitmap.Width)
-                            continue;
-
-                        if (matrixGrey[posM, posN] == 0)
-                        {
-                            if (posX - n > pixelWidth * 0.3 && posX - n < pixelWidth * 0.7)
-                                occupiedPixelsBottomLeft += 2;
-
-                            occupiedPixelsBottomLeft++;
-                        }
-                    }
-
-
-                    if (occupiedPixelsTopLeft + occupiedPixelsBottomLeft < pixelHeight * (pixelWidth - 1) * 0.25)
-                    {
-                        bitmap.SetPixel(posX, posY, Color.Blue);
-                        colouredMapMatrix[y, x] = 6; // dedicated
-                    }
-                }
-            }
-
-            if (Debug)
-                bitmap.Save(DebugDir + @"\points.jpg");
-
-            return colouredMapMatrix;
         }
 
+        /// <summary>
+        ///     Get cropped binary image from the given screenshot
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
         public Bitmap RetrievePanel(string filePath)
         {
             using (var bitMap =

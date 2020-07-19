@@ -22,8 +22,8 @@ namespace BadgeReader
 
         public Map()
         {
-            InitializeSmallBadgeMatrix();
             InitializeMapMatrix();
+            // InitializeSmallBadgeMatrix();
         }
 
         private void InitializeMapMatrix()
@@ -141,7 +141,6 @@ namespace BadgeReader
             }
         }
 
-        public int Possibilities { get; set; } = 0;
 
         #region Obsolete
         public char[] Characters = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray();
@@ -150,6 +149,7 @@ namespace BadgeReader
 
         public const int MaxRow = 29;
         public const int MaxColumn = 45;
+        public int Possibilities { get; set; } = 0;
 
 
         public int[,] SmallBadgeMatrix = new int[9, 5];
