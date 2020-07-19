@@ -11,7 +11,8 @@ namespace BadgeReader
 
         public void ProduceImage(List<Badge> badges, Bitmap originalBitMap)
         {
-            originalBitMap.Save(@"C:\Users\qqytqqyt\OneDrive\Documents\OneDrive\OwnProjects\Combination\freetest\origin.jpg");
+            if (PosRetriever.Debug)
+                originalBitMap.Save(PosRetriever.DebugDir + @"\origin.jpg");
             var positions = new List<List<Position>>();
             using (var outputImg = new Bitmap(originalBitMap))
             {
@@ -66,7 +67,8 @@ namespace BadgeReader
                     }
                 }
 
-                outputImg.Save(@"C:\Users\qqytqqyt\OneDrive\Documents\OneDrive\OwnProjects\Combination\freetest\output.jpg");
+                if (PosRetriever.Debug)
+                    originalBitMap.Save(PosRetriever.DebugDir + @"\output.jpg");
             }
         }
         

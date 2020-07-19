@@ -12,8 +12,9 @@ namespace BadgeReaderTester
         static void Main(string[] args)
         {
             var dir = @"C:\Users\qqytqqyt\source\repos\BadgeReader\BadgeReader.Tests\Resources\";
-            var fileInfo = new FileInfo(dir + "test16.jpg");
-            var posRetriever = new PosRetriever() {Debug = true};
+            var fileInfo = new FileInfo(dir + "test2.jpg");
+            var posRetriever = new PosRetriever();
+            PosRetriever.Debug = true;
             using (var croppedImg = posRetriever.RetrievePanel(fileInfo.FullName))
             {
                 var map = new Map();

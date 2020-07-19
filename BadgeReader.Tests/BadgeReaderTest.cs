@@ -36,7 +36,7 @@ namespace BadgeReader.Tests
                     results = results.OrderBy(r => r.Position.X).ThenBy(r => r.Position.Y).ToList();
                     var expectedResults = JsonConvert.DeserializeObject<List<Badge>>(File.ReadAllText(dir + fileInfo.Name + ".json")).OrderBy(r => r.Position.X).ThenBy(r => r.Position.Y).ToList();
 
-                    Assert.AreEqual(JsonConvert.SerializeObject(expectedResults), JsonConvert.SerializeObject(results));
+                    Assert.AreEqual(JsonConvert.SerializeObject(expectedResults), JsonConvert.SerializeObject(results), fileInfo.Name);
                 }
             }
         }
