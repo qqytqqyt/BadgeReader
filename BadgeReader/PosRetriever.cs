@@ -18,6 +18,13 @@ namespace BadgeReader
         public BadgeType BadgeType { get; set; }
     }
 
+    public class PointsResult
+    {
+        public Bitmap Image { get; set; }
+
+        public int[,] DotMatrix { get; set; }
+    }
+
     public class PosRetriever
     {
         public bool Debug { get; set; }
@@ -40,7 +47,7 @@ namespace BadgeReader
                     if (!IsCovered(processedMatrix[y, x]) && processedMatrix[y, x] != 7)
                         invalidCells++;
 
-                for (var x = col + size / 2 + 1; x <= col + (size - 1); ++x)
+                for (var x = col + size / 2 + 1; x <= col + size; ++x)
                 for (var y = row - (size - x + col); y <= row + size + (size - x) + col; ++y)
                     if (!IsCovered(processedMatrix[y, x]) && processedMatrix[y, x] != 7)
                         invalidCells++;

@@ -12,7 +12,7 @@ namespace BadgeReaderTester
         static void Main(string[] args)
         {
             var dir = @"C:\Users\qqytqqyt\source\repos\BadgeReader\BadgeReader.Tests\Resources\";
-            var fileInfo = new FileInfo(dir + "test14.png");
+            var fileInfo = new FileInfo(dir + "test4.jpg");
             var posRetriever = new PosRetriever() {Debug = true};
             using (var croppedImg = posRetriever.RetrievePanel(fileInfo.FullName))
             {
@@ -20,6 +20,8 @@ namespace BadgeReaderTester
 
                 var dots = posRetriever.PrintDots(croppedImg, map.MapMatrix);
                 var results = posRetriever.ReadDots(dots);
+
+                new ImageProducer().ProduceImage(results, croppedImg);
 
                 File.WriteAllText(@"C:\Users\qqytqqyt\OneDrive\Documents\OneDrive\OwnProjects\Combination\freetest\" + fileInfo.Name + ".json", @JsonConvert.SerializeObject(results));
             }
