@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 
@@ -17,17 +19,24 @@ namespace BadgeReader.Tests
             {
                 var fileInfo = new FileInfo(dir + $"test{i}.jpg");
                 if (!fileInfo.Exists)
-                    continue;
+                {
+                    fileInfo = new FileInfo(dir + $"test{i}.png");
+                    if (!fileInfo.Exists)
+                        continue;
+                }
                 
                 var posRetriever = new PosRetriever();
-                using (var croppedImg = posRetriever.RetrieveFreePositions(fileInfo.FullName))
+                using (var croppedImg = posRetriever.RetrievePanel(fileInfo.FullName))
                 {
                     var map = new Map();
 
                     var dots = posRetriever.PrintDots(croppedImg, map.MapMatrix);
                     var results = posRetriever.ReadDots(dots);
 
-                    Assert.AreEqual(JsonConvert.SerializeObject(results), File.ReadAllText(dir + $"test{i}.jpg.json"));
+                    results = results.OrderBy(r => r.Position.X).ThenBy(r => r.Position.Y).ToList();
+                    var expectedResults = JsonConvert.DeserializeObject<List<Badge>>(File.ReadAllText(dir + fileInfo.Name + ".json")).OrderBy(r => r.Position.X).ThenBy(r => r.Position.Y).ToList();
+
+                    Assert.AreEqual(JsonConvert.SerializeObject(expectedResults), JsonConvert.SerializeObject(results));
                 }
             }
         }

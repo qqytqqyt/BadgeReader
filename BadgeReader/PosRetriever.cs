@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Xml.Schema;
 
 namespace BadgeReader
 {
@@ -21,114 +20,37 @@ namespace BadgeReader
 
     public class PosRetriever
     {
-        public bool VerifyLargeBadge(int[,] processedMatrix, int col, int row)
+        public bool Debug { get; set; }
+
+        private string DebugDir { get; } =
+            @"C:\Users\qqytqqyt\OneDrive\Documents\OneDrive\OwnProjects\Combination\freetest\";
+
+        private static bool VerifyBadge(int[,] processedMatrix, int col, int row, int size)
         {
             try
             {
-                if (col + 8 >= processedMatrix.GetLength(1) || row + 12 >= processedMatrix.GetLength(0))
+                col = col - size;
+                if (col < 0 || col + size >= processedMatrix.GetLength(1) ||
+                    row + size * 1.5 >= processedMatrix.GetLength(0))
                     return false;
 
                 var invalidCells = 0;
-                for (int x = col; x <= col + 4; ++x)
-                {
-                    for (int y = row - (x - col); y <= row + 8 + (x - col); ++y)
-                    {
-                        if (!IsCovered(processedMatrix[y, x]) && processedMatrix[y, x] != 7)
-                            invalidCells++;
-                    }
-                }
+                for (var x = col; x <= col + size / 2; ++x)
+                for (var y = row - (x - col); y <= row + size + (x - col); ++y)
+                    if (!IsCovered(processedMatrix[y, x]) && processedMatrix[y, x] != 7)
+                        invalidCells++;
 
-                for (int x = col + 5; x <= col + 7; ++x)
-                {
-                    for (int y = row - (8 - x + col); y <= row + 8 + (8 - x + col); ++y)
-                    {
-                        if (!IsCovered(processedMatrix[y, x]) && processedMatrix[y, x] != 7)
-                            invalidCells++;
-                    }
-                }
+                for (var x = col + size / 2 + 1; x <= col + (size - 1); ++x)
+                for (var y = row - (size - x + col); y <= row + size + (size - x) + col; ++y)
+                    if (!IsCovered(processedMatrix[y, x]) && processedMatrix[y, x] != 7)
+                        invalidCells++;
 
                 if (invalidCells >= 2)
                     return false;
 
                 return true;
             }
-            catch (Exception e)
-            {
-                return false;
-            }
-        }
-
-
-        public bool VerifyMedianBadge(int[,] processedMatrix, int col, int row)
-        {
-            try
-            {
-                if (col + 6 >= processedMatrix.GetLength(1) || row + 9 >= processedMatrix.GetLength(0))
-                    return false;
-
-                var invalidCells = 0;
-                for (int x = col; x <= col + 3; ++x)
-                {
-                    for (int y = row - (x - col); y <= row + 6 + (x - col); ++y)
-                    {
-                        if (!IsCovered(processedMatrix[y, x]) && processedMatrix[y, x] != 7)
-                            invalidCells++;
-                    }
-                }
-
-                for (int x = col + 4; x <= col + 5; ++x)
-                {
-                    for (int y = row - (6 - x + col); y <= row + 6 + (6 - x + col); ++y)
-                    {
-                        if (!IsCovered(processedMatrix[y, x]) && processedMatrix[y, x] != 7)
-                            invalidCells++;
-                    }
-                }
-
-                if (invalidCells >= 2)
-                    return false;
-
-                return true;
-            }
-            catch (Exception e)
-            {
-                return false;
-            }
-        }
-
-        public bool VerifySmallBadge(int[,] processedMatrix, int col, int row)
-        {
-            try
-            {
-                if (col + 6 >= processedMatrix.GetLength(1) || row + 6 >= processedMatrix.GetLength(0))
-                    return false;
-
-
-                var invalidCells = 0;
-                for (int x = col; x <= col + 2; ++x)
-                {
-                    for (int y = row - (x - col); y <= row + 4 + (x - col); ++y)
-                    {
-                        if (!IsCovered(processedMatrix[y, x]) && processedMatrix[y, x] != 7)
-                            invalidCells++;
-                    }
-                }
-
-                for (int x = col + 3; x <= col + 3; ++x)
-                {
-                    for (int y = row - (4 - x + col); y <= row + 4 + (4 - x + col); ++y)
-                    {
-                        if (!IsCovered(processedMatrix[y, x]) && processedMatrix[y, x] != 7)
-                            invalidCells++;
-                    }
-                }
-
-                if (invalidCells >= 2)
-                    return false;
-
-                return true;
-            }
-            catch (Exception e)
+            catch (Exception)
             {
                 return false;
             }
@@ -145,194 +67,76 @@ namespace BadgeReader
             // 7 -> edged & used
             var badges = new List<Badge>();
 
-            for (int x = 0; x < processedMatrix.GetLength(1); ++x)
+            for (var x = processedMatrix.GetLength(1) - 1; x >= 0; --x)
+            for (var y = 0; y < processedMatrix.GetLength(0); ++y)
             {
-                for (int y = 0; y < processedMatrix.GetLength(0); ++y)
-                {
-                    if (x == 34 && y == 4)
-                        Console.Write(true);
-                    
-                    if (IsCovered(processedMatrix[y, x]))
+                if (x == 16 && y == 12)
+                    Console.Write(true);
+
+                if (IsCovered(processedMatrix[y, x]))
+                    for (var k = y; k <= y + 8 && k < processedMatrix.GetLength(0); ++k)
                     {
-                        // start vertical scan
-                        for (int k = y; k <= y + 8 && k < processedMatrix.GetLength(0); ++k)
+                        if (k - y == 8)
                         {
-                            if (k - y == 8)
+                            if (VerifyBadge(processedMatrix, x, y, 8))
                             {
-                                if (VerifyLargeBadge(processedMatrix, x, y))
-                                {
-                                    var badge = new Badge()
-                                        { BadgeType = BadgeType.Large, Position = new Position(x, y) };
-                                    PutLargeBadge(processedMatrix, x, y);
-                                    badges.Add(badge);
-                                }
-                                break;
+                                var badge = new Badge {BadgeType = BadgeType.Large, Position = new Position(x - 8, y)};
+                                PutBadge(processedMatrix, x, y, 8);
+                                badges.Add(badge);
                             }
 
-                            if (!IsCovered(processedMatrix[k, x]))
-                            {
-                                if (k - y == 7)
-                                {
-                                    if (VerifyMedianBadge(processedMatrix, x, y))
-                                    {
-                                        var badge = new Badge()
-                                            { BadgeType = BadgeType.Median, Position = new Position(x, y) };
-                                        PutMedianBadge(processedMatrix, x, y);
-                                        badges.Add(badge);
-                                    }
-                                }
-
-
-                                if (k - y == 5)
-                                {
-                                    if (VerifySmallBadge(processedMatrix, x, y))
-                                    {
-                                        var badge = new Badge()
-                                            { BadgeType = BadgeType.Small, Position = new Position(x, y) };
-                                        PutSmallBadge(processedMatrix, x, y);
-                                        badges.Add(badge);
-                                    }
-                                }
-
-                                break;
-                            }
-
-                            //if (k > y && processedMatrix[k, x] == 6 && processedMatrix[y, x] != 6)
-                            //{
-                            //    if (k - y == 6)
-                            //    {
-                            //        if (VerifyMedianBadge(processedMatrix, x, y))
-                            //        {
-                            //            possibleBadge = new Badge()
-                            //                { BadgeType = BadgeType.Median, Position = new Position(x, y) };
-                            //        }
-                            //    }
-
-
-                            //    if (k - y == 4)
-                            //    {
-                            //        if (VerifySmallBadge(processedMatrix, x, y))
-                            //        {
-                            //            possibleBadge = new Badge()
-                            //                { BadgeType = BadgeType.Small, Position = new Position(x, y) };
-                            //        }
-                            //    }
-                            // }
+                            break;
                         }
 
-                        //if (possibleBadge != null)
-                        //{
-                        //    if (possibleBadge.BadgeType == BadgeType.Median)
-                        //    {
-                        //        PutMedianBadge(processedMatrix, x, y);
-                        //    }
-                        //    else
-                        //    {
-                        //        PutSmallBadge(processedMatrix, x, y);
-                        //    }
-                        //    badges.Add(possibleBadge);
-                        //}
+                        if (!IsCovered(processedMatrix[k, x]))
+                        {
+                            if (k - y == 7)
+                                if (VerifyBadge(processedMatrix, x, y, 6))
+                                {
+                                    var badge = new Badge
+                                        {BadgeType = BadgeType.Median, Position = new Position(x - 6, y)};
+                                    PutBadge(processedMatrix, x, y, 6);
+                                    badges.Add(badge);
+                                }
+
+
+                            if (k - y == 5)
+                                if (VerifyBadge(processedMatrix, x, y, 4))
+                                {
+                                    var badge = new Badge
+                                        {BadgeType = BadgeType.Small, Position = new Position(x - 4, y)};
+                                    PutBadge(processedMatrix, x, y, 4);
+                                    badges.Add(badge);
+                                }
+
+                            break;
+                        }
                     }
-                }
             }
 
+            badges.Reverse();
             return badges;
         }
 
-        public void PutMedianBadge(int[,] processedMatrix, int col, int row)
+        private static void PutBadge(int[,] processedMatrix, int col, int row, int size)
         {
-            for (int y = row; y <= row + 5; ++y)
-            {
-                processedMatrix[y, col] = 5;
-            }
+            for (var y = row; y <= row + (size - 1); ++y) processedMatrix[y, col] = 5;
 
 
-            for (int x = col + 1; x <= col + 3; ++x)
-            {
-                for (int y = row - (x - col - 1); y <= row + 6 + (x - col - 1); ++y)
-                {
-                    processedMatrix[y, x] = 5;
-                }
-            }
+            for (var x = col - 1; x >= col - size / 2; --x)
+            for (var y = row - (col - x - 1); y <= row + size + (col - x - 1); ++y)
+                processedMatrix[y, x] = 5;
 
-            for (int x = col + 4; x <= col + 5; ++x)
-            {
-                for (int y = row - (5 - x + col); y <= row + 6 + (5 - x + col); ++y)
-                {
-                    processedMatrix[y, x] = 5;
-                }
-            }
+            for (var x = col - (size / 2 + 1); x >= col - (size - 1); --x)
+            for (var y = row - (size - 1 - col + x); y <= row + size + (size - 1 - col) + x; ++y)
+                processedMatrix[y, x] = 5;
 
-            for (int y = row; y <= row + 6; ++y)
-            {
-                if (processedMatrix[y, col + 6] == 6)
-                    processedMatrix[y, col + 6] = 7;
-            }
+            for (var y = row; y <= row + size; ++y)
+                if (processedMatrix[y, col - size] == 6)
+                    processedMatrix[y, col - size] = 7;
         }
 
-        public void PutSmallBadge(int[,] processedMatrix, int col, int row)
-        {
-            for (int y = row; y <= row + 3; ++y)
-            {
-                processedMatrix[y, col] = 5;
-            }
-
-            for (int x = col + 1; x <= col + 2; ++x)
-            {
-                for (int y = row - (x - col - 1); y <= row + 4 + (x - col - 1); ++y)
-                {
-                    processedMatrix[y, x] = 5;
-                }
-            }
-
-            for (int x = col + 3; x <= col + 3; ++x)
-            {
-                for (int y = row - (3 - x + col); y <= row + 4 + (3 - x + col); ++y)
-                {
-                    processedMatrix[y, x] = 5;
-                }
-            }
-
-            for (int y = row; y <= row + 4; ++y)
-            {
-                if (processedMatrix[y, col + 4] == 6)
-                    processedMatrix[y, col + 4] = 7;
-            }
-        }
-
-
-
-        public void PutLargeBadge(int[,] processedMatrix, int col, int row)
-        {
-            for (int y = row; y <= row + 7; ++y)
-            {
-                processedMatrix[y, col] = 5;
-            }
-
-            for (int x = col + 1; x <= col + 4; ++x)
-            {
-                for (int y = row - (x - col - 1); y <= row + 8 + (x - col - 1); ++y)
-                {
-                    processedMatrix[y, x] = 5;
-                }
-            }
-
-            for (int x = col + 5; x <= col + 7; ++x)
-            {
-                for (int y = row - (7 - x + col); y <= row + 8 + (7 - x + col); ++y)
-                {
-                    processedMatrix[y, x] = 5;
-                }
-            }
-
-            for (int y = row; y <= row + 8; ++y)
-            {
-                if (processedMatrix[y, col + 8] == 6)
-                    processedMatrix[y, col + 8] = 7;
-            }
-        }
-
-        public static bool IsCovered(int value)
+        private static bool IsCovered(int value)
         {
             return value == 1 || value == 4 || value == 6;
         }
@@ -340,14 +144,15 @@ namespace BadgeReader
 
         public int[,] PrintDots(Bitmap bitmap, int[,] mapMatrix)
         {
-            int[,] colouredMapMatrix = new int[mapMatrix.GetLength(0), mapMatrix.GetLength(1)];
+            var colouredMapMatrix = new int[mapMatrix.GetLength(0), mapMatrix.GetLength(1)];
 
             var pixelHeight = (double) bitmap.Height / (mapMatrix.GetLength(0) - 1);
             var pixelWidth = (double) bitmap.Width / (mapMatrix.GetLength(1) - 1);
             var matrixGrey = bitmap.GetGrayScaleMatrix();
 
-            for (int y = 0; y < mapMatrix.GetLength(0); ++y)
-            for (int x = 0; x < mapMatrix.GetLength(1); ++x)
+            // check occupied available points
+            for (var y = 0; y < mapMatrix.GetLength(0); ++y)
+            for (var x = 0; x < mapMatrix.GetLength(1); ++x)
             {
                 var posY = (int) Math.Round(y * pixelHeight, 0);
                 var posX = (int) Math.Round(x * pixelWidth, 0);
@@ -358,25 +163,20 @@ namespace BadgeReader
 
                 if (mapMatrix[y, x] == 1)
                 {
-                    int occupiedPixels = 0;
+                    var occupiedPixels = 0;
                     // check top
-                    for (double m = posY - pixelHeight; m <= posY + pixelHeight; m++)
+                    for (var m = posY - pixelHeight; m <= posY + pixelHeight; m++)
+                    for (var n = posX - pixelWidth; n <= posX + pixelWidth; n++)
                     {
-                        for (double n = posX - pixelWidth; n <= posX + pixelWidth; n++)
-                        {
-                            var posM = (int) (Math.Round(m, 0));
-                            var posN = (int) (Math.Round(n, 0));
-                            if (posM < 0 || posM >= bitmap.Height || posN < 0 || posN >= bitmap.Width)
-                                continue;
+                        var posM = (int) Math.Round(m, 0);
+                        var posN = (int) Math.Round(n, 0);
+                        if (posM < 0 || posM >= bitmap.Height || posN < 0 || posN >= bitmap.Width)
+                            continue;
 
-                            if (matrixGrey[posM, posN] == 0)
-                            {
-                                occupiedPixels++;
-                            }
-                        }
+                        if (matrixGrey[posM, posN] == 0) occupiedPixels++;
                     }
 
-                    if (occupiedPixels > (pixelHeight * pixelWidth * 4) * 0.075)
+                    if (occupiedPixels > pixelHeight * pixelWidth * 4 * 0.075)
                     {
                         colouredMapMatrix[y, x] = 1; // occupied
                         bitmap.SetPixel(posX, posY, Color.Orange);
@@ -406,8 +206,9 @@ namespace BadgeReader
 
             var ratio = pixelHeight / pixelWidth;
 
-            for (int y = 0; y < mapMatrix.GetLength(0); ++y)
-            for (int x = 0; x < mapMatrix.GetLength(1); ++x)
+            // Re-mark red points
+            for (var y = 0; y < mapMatrix.GetLength(0); ++y)
+            for (var x = 0; x < mapMatrix.GetLength(1); ++x)
             {
                 var posY = (int) Math.Round(y * pixelHeight, 0);
                 var posX = (int) Math.Round(x * pixelWidth, 0);
@@ -416,7 +217,7 @@ namespace BadgeReader
                 if (posY >= bitmap.Height)
                     posY = bitmap.Height - 1;
 
-                if (y == 13 && x == 32)
+                if (y == 12 && x == 39)
                     Console.Write(true);
 
                 if (mapMatrix[y, x] == 0)
@@ -452,35 +253,30 @@ namespace BadgeReader
                         continue;
                     }
 
-                    if (y == 0 || (y == mapMatrix.GetLength(0) - 1))
+                    if (y == 0 || y == mapMatrix.GetLength(0) - 1)
                         continue;
 
                     if (colouredMapMatrix[y + 1, x] == 2 && colouredMapMatrix[y - 1, x] == 2 &&
                         colouredMapMatrix[y, x + 1] == 2 && colouredMapMatrix[y, x - 1] == 2)
                         continue;
 
-                    int occupiedPixelsTopLeft = 0;
+                    var occupiedPixelsTopLeft = 0;
                     // Top Left Triangle
-                    for (double m = posY - pixelHeight; m < posY; m++)
+                    for (var m = posY - pixelHeight; m < posY; m++)
+                    for (var n = posX - pixelWidth; n < posX; n++)
                     {
-                        for (double n = posX - pixelWidth; n < posX; n++)
-                        {
-                            if (Math.Abs((m - posY) / (n - posX + pixelWidth)) > ratio)
-                                continue; // Not in triangle
+                        if (Math.Abs((m - posY) / (n - posX + pixelWidth)) > ratio)
+                            continue; // Not in triangle
 
-                            var posM = (int) (Math.Round(m, 0));
-                            var posN = (int) (Math.Round(n, 0));
-                            if (posM < 0 || posM >= bitmap.Height || posN < 0 || posN >= bitmap.Width)
-                                continue;
+                        var posM = (int) Math.Round(m, 0);
+                        var posN = (int) Math.Round(n, 0);
+                        if (posM < 0 || posM >= bitmap.Height || posN < 0 || posN >= bitmap.Width)
+                            continue;
 
-                            if (matrixGrey[posM, posN] == 0)
-                            {
-                                occupiedPixelsTopLeft++;
-                            }
-                        }
+                        if (matrixGrey[posM, posN] == 0) occupiedPixelsTopLeft++;
                     }
 
-                    if (occupiedPixelsTopLeft > (pixelHeight * pixelWidth) * 0.25)
+                    if (occupiedPixelsTopLeft > pixelHeight * pixelWidth * 0.28)
                     {
                         bitmap.SetPixel(posX, posY, Color.Orange);
                         colouredMapMatrix[y, x] = 4; // covered
@@ -488,27 +284,22 @@ namespace BadgeReader
                     }
 
                     // Top Right Triangle
-                    int occupiedPixelsTopRight = 0;
-                    for (double m = posY - pixelHeight; m < posY; m++)
+                    var occupiedPixelsTopRight = 0;
+                    for (var m = posY - pixelHeight; m < posY; m++)
+                    for (double n = posX + 1; n < posX + pixelWidth; n++)
                     {
-                        for (double n = posX + 1; n < posX + pixelWidth; n++)
-                        {
-                            if (Math.Abs((m - posY) / (n - posX - pixelWidth)) > ratio)
-                                continue; // Not in triangle
+                        if (Math.Abs((m - posY) / (n - posX - pixelWidth)) > ratio)
+                            continue; // Not in triangle
 
-                            var posM = (int) (Math.Round(m, 0));
-                            var posN = (int) (Math.Round(n, 0));
-                            if (posM < 0 || posM >= bitmap.Height || posN < 0 || posN >= bitmap.Width)
-                                continue;
+                        var posM = (int) Math.Round(m, 0);
+                        var posN = (int) Math.Round(n, 0);
+                        if (posM < 0 || posM >= bitmap.Height || posN < 0 || posN >= bitmap.Width)
+                            continue;
 
-                            if (matrixGrey[posM, posN] == 0)
-                            {
-                                occupiedPixelsTopRight++;
-                            }
-                        }
+                        if (matrixGrey[posM, posN] == 0) occupiedPixelsTopRight++;
                     }
 
-                    if (occupiedPixelsTopRight > (pixelHeight * pixelWidth) * 0.25)
+                    if (occupiedPixelsTopRight > pixelHeight * pixelWidth * 0.28)
                     {
                         bitmap.SetPixel(posX, posY, Color.Orange);
                         colouredMapMatrix[y, x] = 4; // covered
@@ -516,56 +307,54 @@ namespace BadgeReader
                     }
 
                     // Bottom Left Triangle
-                    int occupiedPixelsBottomLeft = 0;
+                    var occupiedPixelsBottomLeft = 0;
                     for (double m = posY + 1; m < posY + pixelHeight; m++)
+                    for (var n = posX - pixelWidth; n < posX; n++)
                     {
-                        for (double n = posX - pixelWidth; n < posX; n++)
-                        {
-                            if (Math.Abs((m - posY) / (n - posX + pixelWidth)) > ratio)
-                                continue; // Not in triangle
+                        if (Math.Abs((m - posY) / (n - posX + pixelWidth)) > ratio)
+                            continue; // Not in triangle
 
-                            var posM = (int) (Math.Round(m, 0));
-                            var posN = (int) (Math.Round(n, 0));
-                            if (posM < 0 || posM >= bitmap.Height || posN < 0 || posN >= bitmap.Width)
-                                continue;
+                        var posM = (int) Math.Round(m, 0);
+                        var posN = (int) Math.Round(n, 0);
+                        if (posM < 0 || posM >= bitmap.Height || posN < 0 || posN >= bitmap.Width)
+                            continue;
 
-                            if (matrixGrey[posM, posN] == 0)
-                            {
-                                occupiedPixelsBottomLeft++;
-                            }
-                        }
+                        if (matrixGrey[posM, posN] == 0) occupiedPixelsBottomLeft++;
                     }
 
-                    if (occupiedPixelsBottomLeft > (pixelHeight * pixelWidth) * 0.25)
+                    if (occupiedPixelsBottomLeft > pixelHeight * pixelWidth * 0.28)
                     {
                         bitmap.SetPixel(posX, posY, Color.Orange);
                         colouredMapMatrix[y, x] = 4; // covered
                         continue;
                     }
 
-
-                    // Bottom Right Triangle
-                    int occupiedPixelsBottomRight = 0;
-                    for (double m = posY + 1; m < posY + pixelHeight; m++)
+                    if (occupiedPixelsTopLeft + occupiedPixelsBottomLeft >
+                        pixelHeight * pixelWidth * 2 * 0.15 && colouredMapMatrix[y - 1, x] == 1
+                                                            && colouredMapMatrix[y, x - 1] == 1 &&
+                                                            colouredMapMatrix[y + 1, x] == 1)
                     {
-                        for (double n = posX + 1; n < posX + pixelWidth; n++)
-                        {
-                            if (Math.Abs((m - posY) / (n - posX - pixelWidth)) > ratio)
-                                continue; // Not in triangle
-
-                            var posM = (int) (Math.Round(m, 0));
-                            var posN = (int) (Math.Round(n, 0));
-                            if (posM < 0 || posM >= bitmap.Height || posN < 0 || posN >= bitmap.Width)
-                                continue;
-
-                            if (matrixGrey[posM, posN] == 0)
-                            {
-                                occupiedPixelsBottomRight++;
-                            }
-                        }
+                        bitmap.SetPixel(posX, posY, Color.Orange);
+                        colouredMapMatrix[y, x] = 4; // covered
                     }
 
-                    if (occupiedPixelsBottomRight > (pixelHeight * pixelWidth) * 0.25)
+                    // Bottom Right Triangle
+                    var occupiedPixelsBottomRight = 0;
+                    for (double m = posY + 1; m < posY + pixelHeight; m++)
+                    for (double n = posX + 1; n < posX + pixelWidth; n++)
+                    {
+                        if (Math.Abs((m - posY) / (n - posX - pixelWidth)) > ratio)
+                            continue; // Not in triangle
+
+                        var posM = (int) Math.Round(m, 0);
+                        var posN = (int) Math.Round(n, 0);
+                        if (posM < 0 || posM >= bitmap.Height || posN < 0 || posN >= bitmap.Width)
+                            continue;
+
+                        if (matrixGrey[posM, posN] == 0) occupiedPixelsBottomRight++;
+                    }
+
+                    if (occupiedPixelsBottomRight > pixelHeight * pixelWidth * 0.28)
                     {
                         bitmap.SetPixel(posX, posY, Color.Orange);
                         colouredMapMatrix[y, x] = 4; // covered
@@ -573,7 +362,7 @@ namespace BadgeReader
                     }
 
                     if (occupiedPixelsTopLeft + occupiedPixelsBottomRight + occupiedPixelsBottomLeft +
-                        occupiedPixelsBottomRight > (pixelHeight * pixelWidth * 4) * 0.0445)
+                        occupiedPixelsBottomRight > pixelHeight * pixelWidth * 4 * 0.1)
                     {
                         bitmap.SetPixel(posX, posY, Color.Orange);
                         colouredMapMatrix[y, x] = 4; // covered
@@ -581,8 +370,9 @@ namespace BadgeReader
                 }
             }
 
-            for (int y = 1; y < mapMatrix.GetLength(0); ++y)
-            for (int x = 4; x < mapMatrix.GetLength(1); ++x)
+            // special marking for non-shared left edge
+            for (var y = 1; y < mapMatrix.GetLength(0); ++y)
+            for (var x = 4; x < mapMatrix.GetLength(1); ++x)
             {
                 var posY = (int) Math.Round(y * pixelHeight, 0);
                 var posX = (int) Math.Round(x * pixelWidth, 0);
@@ -594,100 +384,110 @@ namespace BadgeReader
 
                 if (IsCovered(colouredMapMatrix[y, x]))
                 {
-                    int occupiedPixelsTopRight = 0;
-                    for (double m = posY - pixelHeight; m < posY; m++)
+                    var occupiedPixelsTopLeft = 0;
+                    // Top Left Triangle
+                    for (var m = posY - pixelHeight; m < posY; m++)
+                    for (var n = posX - pixelWidth; n < posX; n++)
                     {
-                        for (double n = posX + 1; n < posX + pixelWidth; n++)
-                        {
-                            if (Math.Abs((m - posY) / (n - posX - pixelWidth)) > ratio)
-                                continue; // Not in triangle
+                        if (Math.Abs((m - posY) / (n - posX + pixelWidth)) > ratio)
+                            continue; // Not in triangle
 
-                                var posM = (int)(Math.Round(m, 0));
-                            var posN = (int)(Math.Round(n, 0));
-                            if (posM < 0 || posM >= bitmap.Height || posN < 0 || posN >= bitmap.Width)
-                                continue;
+                        var posM = (int) Math.Round(m, 0);
+                        var posN = (int) Math.Round(n, 0);
+                        if (posM < 0 || posM >= bitmap.Height || posN < 0 || posN >= bitmap.Width)
+                            continue;
 
-                            if (matrixGrey[posM, posN] == 0)
-                            {
-                                occupiedPixelsTopRight++;
-                            }
-                        }
+                        if (matrixGrey[posM, posN] == 0) occupiedPixelsTopLeft++;
                     }
 
-                    if (x == 34 && y == 11)
+                    if (x == 31 && y == 19)
                         Console.Write(true);
-                        // Bottom Right Triangle
-                        int occupiedPixelsBottomRight = 0;
+
+
+                    // Bottom Left Triangle
+                    var occupiedPixelsBottomLeft = 0;
                     for (double m = posY + 1; m < posY + pixelHeight; m++)
+                    for (var n = posX - pixelWidth; n < posX; n++)
                     {
-                        for (double n = posX + 1; n < posX + pixelWidth; n++)
-                        {
-                            if (Math.Abs((m - posY) / (n - posX - pixelWidth)) > ratio)
-                                continue; // Not in triangle
+                        if (Math.Abs((m - posY) / (n - posX + pixelWidth)) > ratio)
+                            continue; // Not in triangle
 
-                            var posM = (int)(Math.Round(m, 0));
-                            var posN = (int)(Math.Round(n, 0));
-                            if (posM < 0 || posM >= bitmap.Height || posN < 0 || posN >= bitmap.Width)
-                                continue;
+                        var posM = (int) Math.Round(m, 0);
+                        var posN = (int) Math.Round(n, 0);
+                        if (posM < 0 || posM >= bitmap.Height || posN < 0 || posN >= bitmap.Width)
+                            continue;
 
-                            if (matrixGrey[posM, posN] == 0)
-                            {
-                                occupiedPixelsBottomRight++;
-                            }
-                        }
+                        if (matrixGrey[posM, posN] == 0) occupiedPixelsBottomLeft++;
                     }
 
 
-                   if (occupiedPixelsTopRight + occupiedPixelsBottomRight < (pixelHeight * pixelWidth) * 0.25)
+                    if (occupiedPixelsTopLeft + occupiedPixelsBottomLeft < pixelHeight * pixelWidth * 0.2)
                     {
                         bitmap.SetPixel(posX, posY, Color.Blue);
-                        colouredMapMatrix[y, x] = 6; // shared
+                        colouredMapMatrix[y, x] = 6; // dedicated
                     }
                 }
             }
 
+            if (Debug)
+                bitmap.Save(DebugDir + @"\points.jpg");
 
-
-            bitmap.Save(@"C:\Users\qqytqqyt\OneDrive\Documents\OneDrive\OwnProjects\Combination\freetest\points.jpg");
             return colouredMapMatrix;
         }
-        
-        public Bitmap RetrieveFreePositions(string filePath)
+
+        public Bitmap RetrievePanel(string filePath)
         {
             using (var bitMap =
                 new Bitmap(filePath))
             {
                 using (var bitMapGray = bitMap.ToGrayscale())
                 {
-                    bitMapGray.Save(
-                        @"C:\Users\qqytqqyt\OneDrive\Documents\OneDrive\OwnProjects\Combination\freetest\gray.jpg");
-
                     var panelTopX = 0;
                     var panelTopY = 0;
                     var panelWidth = 0;
                     var panelHeight = 0;
                     using (var bitMapBi = bitMapGray.Binarilization(32))
                     {
-                        bitMapBi.Save(
-                            @"C:\Users\qqytqqyt\OneDrive\Documents\OneDrive\OwnProjects\Combination\freetest\123.jpg");
+                        if (Debug)
+                            bitMapBi.Save(DebugDir + @"\bi1.jpg");
 
                         var matrixGrey = bitMapBi.GetGrayScaleMatrix();
 
                         var width = matrixGrey.GetLength(1);
                         var height = matrixGrey.GetLength(0);
 
+                        var startX = width - 1;
+                        for (var x = width - 1; x >= width * 0.7; --x)
+                        {
+                            var currentPoints = 0;
+                            for (var y = 0; y < height; ++y)
+                            {
+                                var grayScale = matrixGrey[y, x];
+                                if (grayScale == 0)
+                                    currentPoints++;
+                                else
+                                    break;
+                            }
+
+                            if (currentPoints >= height - 5)
+                            {
+                                startX = x;
+                                break;
+                            }
+                        }
+
+
                         var boardTopRightX = 0;
                         var boardTopRightY = 0;
                         var boardHeight = 0;
-                        for (int x = width - 1; x >= width * 0.7; --x)
+
+                        for (var x = startX; x >= width * 0.7; --x)
                         {
-                            if (x == 1877)
-                                Console.Write(true);
                             var currentPoints = 0;
                             var currentY = 0;
-                            for (int y = (int) (height * 0.5); y < height; ++y)
+                            for (var y = (int) (height * 0.5); y < height; ++y)
                             {
-                                int grayScale = matrixGrey[y, x];
+                                var grayScale = matrixGrey[y, x];
                                 if (grayScale != 0)
                                 {
                                     currentPoints++;
@@ -709,9 +509,9 @@ namespace BadgeReader
                         }
 
                         var boardHeightConfirmed = 0;
-                        for (int y = (int)(height * 0.5); y < height; ++y)
+                        for (var y = (int) (height * 0.5); y < height; ++y)
                         {
-                            int grayScale = matrixGrey[y, boardTopRightX - 1];
+                            var grayScale = matrixGrey[y, boardTopRightX - 1];
                             if (grayScale != 0)
                             {
                                 boardHeightConfirmed++;
@@ -723,6 +523,7 @@ namespace BadgeReader
                                     boardTopRightY = y - boardHeightConfirmed;
                                     boardHeight = boardHeightConfirmed;
                                 }
+
                                 break;
                             }
                         }
@@ -737,9 +538,9 @@ namespace BadgeReader
                     using (var cropped = bitMapGray.CropAtRect(new Rectangle(panelTopX,
                         panelTopY, panelWidth, panelHeight)))
                     {
-                        var bitMapBi = cropped.Binarilization(75, 55, panelWidth / 25);
-                        bitMapBi.Save(
-                                @"C:\Users\qqytqqyt\OneDrive\Documents\OneDrive\OwnProjects\Combination\freetest\croppedBi.jpg");
+                        var bitMapBi = cropped.Binarilization(55, 55, panelWidth / 25);
+                        if (Debug)
+                            bitMapBi.Save(DebugDir + @"\croppedBi.jpg");
 
 
                         return bitMapBi;
@@ -753,27 +554,27 @@ namespace BadgeReader
         public List<Position> RetrieveCroppedImg(string filePath)
         {
             using (var bitMap =
-               new Bitmap(filePath))
+                new Bitmap(filePath))
             {
                 using (var bitMapGray = bitMap.ToGrayscale())
                 {
                     using (var bitMapBi = bitMapGray.Binarilization(55))
                     {
-                        using (var cropped = bitMapBi.CropAtRect(new Rectangle((int)(bitMapBi.Width * 0.5337),
-                            (int)(bitMapBi.Height * 0.6529), (int)(bitMapBi.Width * 0.4198),
-                            (int)(bitMapBi.Height * 0.2907))))
+                        using (var cropped = bitMapBi.CropAtRect(new Rectangle((int) (bitMapBi.Width * 0.5337),
+                            (int) (bitMapBi.Height * 0.6529), (int) (bitMapBi.Width * 0.4198),
+                            (int) (bitMapBi.Height * 0.2907))))
                         {
                             var minRow = 0;
                             var matrixGrey = cropped.GetGrayScaleMatrix();
 
 
                             var minCol = 0;
-                            for (int x = 0; x < 0.3 * cropped.Width; ++x)
+                            for (var x = 0; x < 0.3 * cropped.Width; ++x)
                             {
                                 var count = 0;
-                                for (int y = minRow + 1; y < cropped.Height; ++y)
+                                for (var y = minRow + 1; y < cropped.Height; ++y)
                                 {
-                                    int grayScale = matrixGrey[y, x];
+                                    var grayScale = matrixGrey[y, x];
                                     if (grayScale != 255)
                                     {
                                         minCol = x;
@@ -787,39 +588,35 @@ namespace BadgeReader
                             }
 
 
-                            for (int y = minCol; y < 0.05 * cropped.Height; ++y)
+                            for (var y = minCol; y < 0.05 * cropped.Height; ++y)
+                            for (var x = minCol; x < cropped.Width; ++x)
                             {
-                                for (int x = minCol; x < cropped.Width; ++x)
+                                var grayScale = matrixGrey[y, x];
+                                if (grayScale != 255)
                                 {
-                                    int grayScale = matrixGrey[y, x];
-                                    if (grayScale != 255)
-                                    {
-                                        minRow = y;
-                                        break;
-                                    }
+                                    minRow = y;
+                                    break;
                                 }
                             }
 
-                            for (int y = minRow; y < 0.5 * cropped.Height; ++y)
+                            for (var y = minRow; y < 0.5 * cropped.Height; ++y)
                             {
                                 var finish = false;
-                                for (int x = (int)(minCol); x < cropped.Width; ++x)
+                                for (var x = minCol; x < cropped.Width; ++x)
                                 {
-                                    int grayScale = matrixGrey[y, x];
+                                    var grayScale = matrixGrey[y, x];
                                     if (grayScale != 255)
                                     {
-                                        int badPixels = 0;
-                                        for (int yy = y; yy < y + 15 && yy < cropped.Height; ++yy)
+                                        var badPixels = 0;
+                                        for (var yy = y; yy < y + 15 && yy < cropped.Height; ++yy)
+                                        for (var xx = x; xx < x + 20 && xx < cropped.Width; ++xx)
                                         {
-                                            for (int xx = x; xx < x + 20 && xx < cropped.Width; ++xx)
-                                            {
-                                                int grayScale2 = matrixGrey[yy, xx];
-                                                if (grayScale2 != 255)
-                                                    badPixels++;
-                                            }
+                                            var grayScale2 = matrixGrey[yy, xx];
+                                            if (grayScale2 != 255)
+                                                badPixels++;
                                         }
 
-                                        if ((double)badPixels / 300 < 0.2)
+                                        if ((double) badPixels / 300 < 0.2)
                                             minRow = y;
                                         else
                                             finish = true;
@@ -834,21 +631,22 @@ namespace BadgeReader
                             }
 
                             using (var final =
-                                cropped.CropAtRect(new Rectangle(minCol + 1, minRow + 1, cropped.Width - minCol - 1, cropped.Height - minRow - 1)))
+                                cropped.CropAtRect(new Rectangle(minCol + 1, minRow + 1, cropped.Width - minCol - 1,
+                                    cropped.Height - minRow - 1)))
                             {
                                 var matrix = final.GetGrayScaleMatrix();
                                 // find longest vertical line
                                 var maxHeight = 0;
-                                int currentX = 0;
-                                int pointY = 0;
-                                for (int x = 0; x < matrix.GetLength(1) / 6; ++x)
+                                var currentX = 0;
+                                var pointY = 0;
+                                for (var x = 0; x < matrix.GetLength(1) / 6; ++x)
                                 {
                                     if (x > 94)
                                         Console.Write(true);
                                     var currentHeight = 0;
-                                    for (int y = 0; y < matrix.GetLength(0); ++y)
+                                    for (var y = 0; y < matrix.GetLength(0); ++y)
                                     {
-                                        int grayScale = matrix[y, x];
+                                        var grayScale = matrix[y, x];
                                         if (grayScale != 255)
                                         {
                                             currentHeight++;
@@ -865,10 +663,8 @@ namespace BadgeReader
                                         }
                                     }
 
-                                    if (currentHeight == 0 && maxHeight > 10)
-                                    {
-                                        break;
-                                    };
+                                    if (currentHeight == 0 && maxHeight > 10) break;
+                                    ;
 
                                     if (currentHeight >= maxHeight)
                                     {
@@ -881,22 +677,22 @@ namespace BadgeReader
 
                                 var startX = currentX;
                                 var startY = pointY;
-                                double pointHeight = (double)maxHeight / 4;
-                                double pointWidth = (double)(maxHeight * 1.675 + 2) / 4;
+                                var pointHeight = (double) maxHeight / 4;
+                                var pointWidth = (maxHeight * 1.675 + 2) / 4;
 
 
                                 var results = new List<Position>();
 
-                                int previousX = startX;
-                                int previousY = startY;
-                                int lastPosX = 0;
-                                int lastPosY = 2;
-                                for (int i = 0; i < 6; ++i)
+                                var previousX = startX;
+                                var previousY = startY;
+                                var lastPosX = 0;
+                                var lastPosY = 2;
+                                for (var i = 0; i < 6; ++i)
                                 {
                                     pointY = GetNextBadgePosition(matrix, ref currentX);
 
-                                    int badgePosX = (int)(Math.Round((lastPosX + (currentX - previousX) / pointWidth), 0));
-                                    int badgePosY = (int)(Math.Round(lastPosY + (pointY - previousY) / pointHeight, 0));
+                                    var badgePosX = (int) Math.Round(lastPosX + (currentX - previousX) / pointWidth, 0);
+                                    var badgePosY = (int) Math.Round(lastPosY + (pointY - previousY) / pointHeight, 0);
                                     previousX = currentX;
                                     previousY = pointY;
                                     lastPosX = badgePosX;
@@ -907,25 +703,22 @@ namespace BadgeReader
 
                                 return results;
                             }
-
                         }
                     }
-
                 }
             }
-
         }
 
         private static int GetNextBadgePosition(int[,] matrix, ref int currentX)
         {
             var maxHeight = 0;
             var pointY = 0;
-            for (int x = currentX + 3; x < matrix.GetLength(1); ++x)
+            for (var x = currentX + 3; x < matrix.GetLength(1); ++x)
             {
                 var currentHeight = 0;
-                for (int y = 0; y < matrix.GetLength(0); ++y)
+                for (var y = 0; y < matrix.GetLength(0); ++y)
                 {
-                    int grayScale = matrix[y, x];
+                    var grayScale = matrix[y, x];
                     if (grayScale != 255)
                     {
                         currentHeight++;
@@ -934,10 +727,7 @@ namespace BadgeReader
                     {
                         if (currentHeight != 0)
                         {
-                            if (currentHeight + 2 >= maxHeight)
-                            {
-                                pointY = y - currentHeight;
-                            }
+                            if (currentHeight + 2 >= maxHeight) pointY = y - currentHeight;
 
                             break;
                         }
@@ -958,6 +748,5 @@ namespace BadgeReader
         }
 
         #endregion
-
     }
 }

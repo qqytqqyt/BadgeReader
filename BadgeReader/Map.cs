@@ -17,16 +17,8 @@ namespace BadgeReader
 
     public class Map
     {
-        public char[] Characters = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray();
-
-        public List<int> StartPosCol = new List<int> {4, 10, 16, 22, 28, 34, 45};
-
-        public const int MaxRow = 29;
-        public const int MaxColumn = 45;
-
-        public int[,] MapMatrix = new int[29, 45];
-
-        public int[,] SmallBadgeMatrix = new int[9, 5];
+        
+        public readonly int[,] MapMatrix = new int[29, 45];
 
         public Map()
         {
@@ -34,7 +26,133 @@ namespace BadgeReader
             InitializeMapMatrix();
         }
 
+        private void InitializeMapMatrix()
+        {
+            // top rectangle
+            for (int row = 4; row <= 12; ++row)
+            {
+                for (int col = 0; col <= 40; ++col)
+                {
+                    if ((row + col) % 2 == 0)
+                        MapMatrix[row, col] = 1;
+                    else
+                        MapMatrix[row, col] = 2;
+                }
+            }
+
+            // bottom rectangle
+            for (int row = 16; row <= 24; ++row)
+            {
+                for (int col = 4; col <= 4 + 40; ++col)
+                {
+                    if ((row + col) % 2 == 0)
+                        MapMatrix[row, col] = 1;
+                    else
+                        MapMatrix[row, col] = 2;
+                }
+            }
+
+            // middle rectangle
+            for (int row = 13; row <= 15; ++row)
+            {
+                for (int col = row - 12; col <= row - 12 + 40; ++col)
+                {
+                    if ((row + col) % 2 == 0)
+                        MapMatrix[row, col] = 1;
+                    else
+                        MapMatrix[row, col] = 2;
+                }
+            }
+
+            // top triangles
+            for (int col = 4; col <= 36; col += 8)
+                MapMatrix[0, col] = 1;
+
+            for (int col = 3; col <= 35; col += 8)
+            {
+                MapMatrix[1, col] = 1;
+                MapMatrix[1, col + 1] = 2;
+                MapMatrix[1, col + 2] = 1;
+            }
+
+            for (int col = 2; col <= 34; col += 8)
+            {
+                MapMatrix[2, col] = 1;
+                MapMatrix[2, col + 1] = 2;
+                MapMatrix[2, col + 2] = 1;
+                MapMatrix[2, col + 3] = 2;
+                MapMatrix[2, col + 4] = 1;
+            }
+
+            for (int col = 1; col <= 33; col += 8)
+            {
+                MapMatrix[3, col] = 1;
+                MapMatrix[3, col + 1] = 2;
+                MapMatrix[3, col + 2] = 1;
+                MapMatrix[3, col + 3] = 2;
+                MapMatrix[3, col + 4] = 1;
+                MapMatrix[3, col + 5] = 2;
+                MapMatrix[3, col + 6] = 1;
+            }
+
+            // bottom triangles
+            for (int col = 8; col <= 40; col += 8)
+                MapMatrix[28, col] = 1;
+
+            for (int col = 7; col <= 39; col += 8)
+            {
+                MapMatrix[27, col] = 1;
+                MapMatrix[27, col + 1] = 2;
+                MapMatrix[27, col + 2] = 1;
+            }
+
+            for (int col = 6; col <= 38; col += 8)
+            {
+                MapMatrix[26, col] = 1;
+                MapMatrix[26, col + 1] = 2;
+                MapMatrix[26, col + 2] = 1;
+                MapMatrix[26, col + 3] = 2;
+                MapMatrix[26, col + 4] = 1;
+            }
+
+            for (int col = 5; col <= 37; col += 8)
+            {
+                MapMatrix[25, col] = 1;
+                MapMatrix[25, col + 1] = 2;
+                MapMatrix[25, col + 2] = 1;
+                MapMatrix[25, col + 3] = 2;
+                MapMatrix[25, col + 4] = 1;
+                MapMatrix[25, col + 5] = 2;
+                MapMatrix[25, col + 6] = 1;
+            }
+
+            int count = 0;
+            for (int row = 0; row < MaxRow; ++row)
+            {
+                for (int col = 0; col < MaxColumn; ++col)
+                {
+                    if (MapMatrix[row, col] != 1 && MapMatrix[row, col] != 2)
+                        MapMatrix[row, col] = 0;
+                    else
+                    {
+                        count++;
+                    }
+                }
+            }
+        }
+
         public int Possibilities { get; set; } = 0;
+
+        #region Obsolete
+        public char[] Characters = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray();
+
+        public List<int> StartPosCol = new List<int> { 4, 10, 16, 22, 28, 34, 45 };
+
+        public const int MaxRow = 29;
+        public const int MaxColumn = 45;
+
+
+        public int[,] SmallBadgeMatrix = new int[9, 5];
 
         public List<Position> GetPosition(string filePath)
         {
@@ -158,119 +276,9 @@ namespace BadgeReader
             SmallBadgeMatrix[8, 4] = 0;
         }
 
-        public void InitializeMapMatrix()
-        {
-            // top rectangle
-            for (int row = 4; row <= 12; ++row)
-            {
-                for (int col = 0; col <= 40; ++col)
-                {
-                    if ((row + col) % 2 == 0)
-                        MapMatrix[row, col] = 1;
-                    else
-                        MapMatrix[row, col] = 2;
-                }
-            }
 
-            // bottom rectangle
-            for (int row = 16; row <= 24; ++row)
-            {
-                for (int col = 4; col <= 4 + 40; ++col)
-                {
-                    if ((row + col) % 2 == 0)
-                        MapMatrix[row, col] = 1;
-                    else
-                        MapMatrix[row, col] = 2;
-                }
-            }
+        #endregion
 
-            // middle rectangle
-            for (int row = 13; row <= 15; ++row)
-            {
-                for (int col = row - 12; col <= row - 12 + 40; ++col)
-                {
-                    if ((row + col) % 2 == 0)
-                        MapMatrix[row, col] = 1;
-                    else
-                        MapMatrix[row, col] = 2;
-                }
-            }
-
-            // top triangles
-            for (int col = 4; col <= 36; col += 8)
-                MapMatrix[0, col] = 1;
-
-            for (int col = 3; col <= 35; col += 8)
-            {
-                MapMatrix[1, col] = 1;
-                MapMatrix[1, col + 1] = 2;
-                MapMatrix[1, col + 2] = 1;
-            }
-
-            for (int col = 2; col <= 34; col += 8)
-            {
-                MapMatrix[2, col] = 1;
-                MapMatrix[2, col + 1] = 2;
-                MapMatrix[2, col + 2] = 1;
-                MapMatrix[2, col + 3] = 2;
-                MapMatrix[2, col + 4] = 1;
-            }
-
-            for (int col = 1; col <= 33; col += 8)
-            {
-                MapMatrix[3, col] = 1;
-                MapMatrix[3, col + 1] = 2;
-                MapMatrix[3, col + 2] = 1;
-                MapMatrix[3, col + 3] = 2;
-                MapMatrix[3, col + 4] = 1;
-                MapMatrix[3, col + 5] = 2;
-                MapMatrix[3, col + 6] = 1;
-            }
-
-            // bottom triangles
-            for (int col = 8; col <= 40; col += 8)
-                MapMatrix[28, col] = 1;
-
-            for (int col = 7; col <= 39; col += 8)
-            {
-                MapMatrix[27, col] = 1;
-                MapMatrix[27, col + 1] = 2;
-                MapMatrix[27, col + 2] = 1;
-            }
-
-            for (int col = 6; col <= 38; col += 8)
-            {
-                MapMatrix[26, col] = 1;
-                MapMatrix[26, col + 1] = 2;
-                MapMatrix[26, col + 2] = 1;
-                MapMatrix[26, col + 3] = 2;
-                MapMatrix[26, col + 4] = 1;
-            }
-
-            for (int col = 5; col <= 37; col += 8)
-            {
-                MapMatrix[25, col] = 1;
-                MapMatrix[25, col + 1] = 2;
-                MapMatrix[25, col + 2] = 1;
-                MapMatrix[25, col + 3] = 2;
-                MapMatrix[25, col + 4] = 1;
-                MapMatrix[25, col + 5] = 2;
-                MapMatrix[25, col + 6] = 1;
-            }
-
-            int count = 0;
-            for (int row = 0; row < MaxRow; ++row)
-            {
-                for (int col = 0; col < MaxColumn; ++col)
-                {
-                    if (MapMatrix[row, col] != 1 && MapMatrix[row, col] != 2)
-                        MapMatrix[row, col] = 0;
-                    else
-                    {
-                        count++;
-                    }
-                }
-            }
-        }
+     
     }
 }
