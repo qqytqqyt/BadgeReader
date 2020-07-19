@@ -109,6 +109,28 @@ namespace BadgeReader
             return bmp;
         }
 
+        public static Bitmap Binarilization(this Bitmap grayScaledBitmap, int thresholdLeft, int thresholdRight, int thresholdX)
+        {
+            var bmp = new Bitmap(grayScaledBitmap); // new Bitmap(grayScaledBitmap.Width, grayScaledBitmap.Height);
+            using (var fbitmap = new FastBitmap(bmp, 0, 0, bmp.Width, bmp.Height))
+            {
+                unsafe
+                {
+                    byte* row = (byte*)fbitmap.Scan0, bb = row;
+                    for (var yy = 0; yy < fbitmap.Height; yy++, bb = row += fbitmap.Stride)
+                    {
+                        for (var xx = 0; xx < fbitmap.Width; xx++, bb += fbitmap.PixelSize)
+                        {
+                            int threshold = xx < thresholdX ? thresholdLeft : thresholdRight;
+                            var gray = (byte)((1140 * *(bb + 0) + 5870 * *(bb + 1) + 2989 * *(bb + 2)) / 10000);
+                            *(bb + 0) = *(bb + 1) = *(bb + 2) = (byte)(gray > threshold ? 0 : 255);
+                        }
+                    }
+                }
+            }
+            return bmp;
+        }
+
         public static Bitmap ReverseBinarilization(this Bitmap grayScaledBitmap, int threshold, bool textInWhite = false)
         {
             var bmp = new Bitmap(grayScaledBitmap); // new Bitmap(grayScaledBitmap.Width, grayScaledBitmap.Height);
