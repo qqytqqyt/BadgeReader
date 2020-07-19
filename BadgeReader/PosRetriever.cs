@@ -45,7 +45,7 @@ namespace BadgeReader
                     if (!IsCovered(processedMatrix[y, x]) && processedMatrix[y, x] != 7)
                         invalidCells++;
 
-                if (invalidCells >= 2)
+                if (invalidCells >= 2) // switch to 1 for development (maximum accuracy)
                     return false;
 
                 return true;
@@ -384,7 +384,7 @@ namespace BadgeReader
                 if (posY >= bitmap.Height)
                     posY = bitmap.Height - 1;
 
-                if (y == 5 && x == 20)
+                if (y == 15 && x == 12)
                     Console.Write(true);
 
                 if (mapMatrix[y, x] == 0)
@@ -442,7 +442,7 @@ namespace BadgeReader
 
                         if (matrixGrey[posM, posN] == 0)
                         {
-                            if (Math.Abs(posX - n) / pixelWidth > 0.3 && Math.Abs(posX - n) / pixelWidth < 0.7)
+                            if (Math.Abs(posY - m) / pixelHeight < 0.6 && Math.Abs(posX - n) / pixelWidth < 0.6)
                                 occupiedPixelsTopLeft += 2;
 
                             occupiedPixelsTopLeft++;
@@ -471,7 +471,7 @@ namespace BadgeReader
 
                         if (matrixGrey[posM, posN] == 0)
                         {
-                            if (Math.Abs(posX - n) / pixelWidth > 0.3 && Math.Abs(posX - n) / pixelWidth < 0.7)
+                            if (Math.Abs(posY - m) / pixelHeight < 0.6 && Math.Abs(posX - n) / pixelWidth < 0.6)
                                 occupiedPixelsTopRight += 2;
 
                             occupiedPixelsTopRight++;
@@ -500,7 +500,7 @@ namespace BadgeReader
 
                         if (matrixGrey[posM, posN] == 0)
                         {
-                            if (Math.Abs(posX - n) / pixelWidth > 0.3 && Math.Abs(posX - n) / pixelWidth < 0.7)
+                            if (Math.Abs(posY - m) / pixelHeight < 0.6 && Math.Abs(posX - n) / pixelWidth < 0.6)
                                 occupiedPixelsBottomLeft += 2;
 
                             occupiedPixelsBottomLeft++;
@@ -538,14 +538,14 @@ namespace BadgeReader
 
                         if (matrixGrey[posM, posN] == 0)
                         {
-                            if (Math.Abs(posX - n) / pixelWidth > 0.3 && Math.Abs(posX - n) / pixelWidth < 0.7)
+                            if (Math.Abs(posY - m) / pixelHeight < 0.6 && Math.Abs(posX - n) / pixelWidth < 0.6)
                                 occupiedPixelsBottomRight += 2;
 
                             occupiedPixelsBottomRight++;
                         }
                     }
 
-                    if (occupiedPixelsBottomRight > pixelHeight * pixelWidth * 0.4)
+                    if (occupiedPixelsBottomRight > (pixelHeight) * (pixelWidth) * 0.4)
                     {
                         bitmap.SetPixel(posX, posY, Color.Orange);
                         colouredMapMatrix[y, x] = 4; // covered
@@ -561,7 +561,7 @@ namespace BadgeReader
                         continue;
                     }
 
-                    if (occupiedPixelsTopLeft + occupiedPixelsBottomRight + occupiedPixelsBottomLeft +
+                    if (occupiedPixelsTopLeft + occupiedPixelsTopRight + occupiedPixelsBottomLeft +
                         occupiedPixelsBottomRight > pixelHeight * pixelWidth * 4 * 0.1)
                     {
                         bitmap.SetPixel(posX, posY, Color.Orange);
