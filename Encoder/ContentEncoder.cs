@@ -33,6 +33,9 @@ namespace Encoder
                         contentInt >>= 8;
                     }
 
+                    if (byteList.Count % 2 == 1)
+                        byteList.Add(0);
+
                     byteList.Reverse();
                     chars = Encoding.Unicode.GetChars(byteList.ToArray()).ToList();
 
