@@ -18,7 +18,7 @@ namespace BadgeReader.Tests
                 for (int attempts = 0; attempts < 50000; ++attempts)
                 {
                     var text = string.Empty;
-                    for (int i = 0; i < 3; ++i)
+                    for (int i = 0; i < length; ++i)
                     {
                         text += (char)ran.Next(33, 127);
                     }
@@ -26,7 +26,7 @@ namespace BadgeReader.Tests
                     var badges = new Encoder.Encoder().Encode(EncodeType.Broadcast, Protocol.ASCII, text);
                     var result = new Encoder.Encoder().Decode(badges);
 
-                    result = result.Substring(0, 3);
+                    result = result.Substring(0, length);
                     Assert.AreEqual(text, result);
                 }
             }
