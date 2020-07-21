@@ -73,6 +73,7 @@ namespace Encoder
                 resultInt.Add(index);
             }
 
+            Console.WriteLine(string.Join(" ", resultInt));
 
             for (int i = 0; i < 10; ++i)
             {
@@ -91,6 +92,7 @@ namespace Encoder
                 results.Insert(0, 0);
             }
 
+            Console.WriteLine(string.Join(" ", results));
 
             var badges = new List<Badge>();
             var e2HttpProtocol = new E2HttpProtocol();
@@ -342,7 +344,7 @@ namespace Encoder
 
             badge = new Badge { Position = new Position(2, 10), BadgeType = BadgeType.Small };
             BadgeElements[51].AllocatedBadges.Add(badge);
-            badge = new Badge { Position = new Position(4, 4), BadgeType = BadgeType.Small };
+            badge = new Badge { Position = new Position(1, 5), BadgeType = BadgeType.Small };
             BadgeElements[51].AllocatedBadges.Add(badge);
 
             // 52, 53
