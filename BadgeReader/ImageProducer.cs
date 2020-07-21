@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
+using BadgeReader.Properties;
 
 namespace BadgeReader
 {
@@ -8,61 +10,63 @@ namespace BadgeReader
     {
         private readonly Random m_rnd = new Random();
 
-        public Bitmap ProduceImage(List<Badge> badges, Bitmap originalBitMap)
+        public Bitmap ProduceImage(List<Badge> badges)
         {
-            if (PosRetriever.Debug)
-                originalBitMap.Save(PosRetriever.DebugDir + @"\origin.jpg");
             var positions = new List<List<Position>>();
-            var outputImg = new Bitmap(originalBitMap);
-            int matrixY = 0;
-            for (int y = 0; y < outputImg.Height; ++y)
+            using (Stream stream = new MemoryStream(Resources.Origin))
             {
-                int matrixX = 0;
-                for (int x = 0; x < outputImg.Width; ++x, ++matrixX)
+                var outputImg = new Bitmap(stream);
+                int matrixY = 0;
+                for (int y = 0; y < outputImg.Height; ++y)
                 {
-                    var originalColour = originalBitMap.GetPixel(x, y);
-                    if (!IsBlack(originalColour) && !IsWhite(originalColour))
+                    int matrixX = 0;
+                    for (int x = 0; x < outputImg.Width; ++x, ++matrixX)
                     {
-                        outputImg.SetPixel(x, y, Color.Blue);
-                        if (matrixX == 0)
+                        var originalColour = outputImg.GetPixel(x, y);
+                        if (!IsBlack(originalColour) && !IsWhite(originalColour))
                         {
-                            positions.Add(new List<Position>());
-                            matrixY++;
+                            outputImg.SetPixel(x, y, Color.Blue);
+                            if (matrixX == 0)
+                            {
+                                positions.Add(new List<Position>());
+                                matrixY++;
+                            }
+
+                            positions[matrixY - 1].Add(new Position(x, y));
+                            matrixX++;
                         }
-
-                        positions[matrixY - 1].Add(new Position(x, y));
-                        matrixX++;
+                        else
+                        {
+                            outputImg.SetPixel(x, y, Color.White);
+                        }
                     }
-                    else
+                }
+
+                foreach (var badge in badges)
+                {
+                    if (badge.BadgeType == BadgeType.Large)
                     {
-                        outputImg.SetPixel(x, y, Color.White);
+                        var col = badge.Position.X;
+                        var row = badge.Position.Y;
+                        WriteDots(positions, outputImg, col, row, 8);
+                    }
+                    if (badge.BadgeType == BadgeType.Median)
+                    {
+                        var col = badge.Position.X;
+                        var row = badge.Position.Y;
+                        WriteDots(positions, outputImg, col, row, 6);
+                    }
+                    if (badge.BadgeType == BadgeType.Small)
+                    {
+                        var col = badge.Position.X;
+                        var row = badge.Position.Y;
+                        WriteDots(positions, outputImg, col, row, 4);
                     }
                 }
-            }
 
-            foreach (var badge in badges)
-            {
-                if (badge.BadgeType == BadgeType.Large)
-                {
-                    var col = badge.Position.X;
-                    var row = badge.Position.Y;
-                    WriteDots(positions, outputImg, col, row, 8);
-                }
-                if (badge.BadgeType == BadgeType.Median)
-                {
-                    var col = badge.Position.X;
-                    var row = badge.Position.Y;
-                    WriteDots(positions, outputImg, col, row, 6);
-                }
-                if (badge.BadgeType == BadgeType.Small)
-                {
-                    var col = badge.Position.X; 
-                    var row = badge.Position.Y;
-                    WriteDots(positions, outputImg, col, row, 4);
-                }
+                return outputImg;
             }
-
-            return outputImg;
+               
         }
         
         private void WriteDots(List<List<Position>> positions, Bitmap outputImg, int col, int row, int size)

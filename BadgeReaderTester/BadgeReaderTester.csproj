@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BadgeReader\BadgeReader.csproj" />
+    <ProjectReference Include="..\Encoder\Encoder.csproj" />
   </ItemGroup>
 
 </Project>
