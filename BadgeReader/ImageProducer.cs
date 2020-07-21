@@ -10,36 +10,36 @@ namespace BadgeReader
     {
         private readonly Random m_rnd = new Random();
 
-        public Bitmap ProduceImage(List<Badge> badges)
+        public Bitmap ProduceImage(List<Badge> badges, int[,] mapMatrix)
         {
             var positions = new List<List<Position>>();
             using (Stream stream = new MemoryStream(Resources.Origin))
             {
                 var outputImg = new Bitmap(stream);
+                var pixelHeight = (double)outputImg.Height / (mapMatrix.GetLength(0) - 1);
+                var pixelWidth = (double)outputImg.Width / (mapMatrix.GetLength(1) - 1);
                 int matrixY = 0;
-                for (int y = 0; y < outputImg.Height; ++y)
+                for (var y = 0; y < mapMatrix.GetLength(0); ++y)
                 {
                     int matrixX = 0;
-                    for (int x = 0; x < outputImg.Width; ++x, ++matrixX)
+                    for (var x = 0; x < mapMatrix.GetLength(1); ++x, ++matrixX)
                     {
-                        var originalColour = outputImg.GetPixel(x, y);
-                        if (!IsBlack(originalColour) && !IsWhite(originalColour))
-                        {
-                            outputImg.SetPixel(x, y, Color.Blue);
-                            if (matrixX == 0)
-                            {
-                                positions.Add(new List<Position>());
-                                matrixY++;
-                            }
+                        var posY = (int)Math.Round(y * pixelHeight, 0);
+                        var posX = (int)Math.Round(x * pixelWidth, 0);
+                        if (posX >= outputImg.Width)
+                            posX = outputImg.Width - 1;
+                        if (posY >= outputImg.Height)
+                            posY = outputImg.Height - 1;
 
-                            positions[matrixY - 1].Add(new Position(x, y));
-                            matrixX++;
-                        }
-                        else
+                        if (matrixX == 0)
                         {
-                            outputImg.SetPixel(x, y, Color.White);
+                            positions.Add(new List<Position>());
+                            matrixY++;
                         }
+
+                        positions[matrixY - 1].Add(new Position(posX, posY));
                     }
+
                 }
 
                 foreach (var badge in badges)

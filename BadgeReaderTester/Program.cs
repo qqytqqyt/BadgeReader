@@ -15,7 +15,8 @@ namespace BadgeReaderTester
             
             var result = new Encoder.Encoder().Decode(badges);
 
-            using (var img = new ImageProducer().ProduceImage(badges))
+            var map = new Map();
+            using (var img = new ImageProducer().ProduceImage(badges, map.MapMatrix))
                 img.Save(PosRetriever.DebugDir + @"output2.jpg");
 
             var dir = @"C:\Users\qqytqqyt\source\repos\BadgeReader\BadgeReader.Tests\Resources\";
@@ -24,12 +25,11 @@ namespace BadgeReaderTester
             PosRetriever.Debug = true;
             using (var croppedImg = posRetriever.RetrievePanel(fileInfo.FullName))
             {
-                var map = new Map();
 
                 var dots = posRetriever.PrintDots(croppedImg, map.MapMatrix);
                 var results = PosRetriever.ReadDots(dots);
 
-                using (var img = new ImageProducer().ProduceImage(results))
+                using (var img = new ImageProducer().ProduceImage(results, map.MapMatrix))
                         img.Save(PosRetriever.DebugDir + @"output.jpg");
 
                 File.WriteAllText(@"C:\Users\qqytqqyt\OneDrive\Documents\OneDrive\OwnProjects\Combination\freetest\" + fileInfo.Name + ".json", @JsonConvert.SerializeObject(results));
