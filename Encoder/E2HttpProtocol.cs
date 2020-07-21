@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Text;
+using System.Linq;
 using BadgeReader;
 
 namespace Encoder
@@ -16,6 +18,97 @@ namespace Encoder
             InitializePanelPositions();
             InitializeBadgeElements();
         }
+
+        public static BigInteger DecodeBadges(List<Badge> badges)
+        {
+            BigInteger finalInt = 0;
+            var resultInt = new List<int>();
+            var e2HttpProtocol = new E2HttpProtocol();
+            for (int i = 0; i < 10; ++i)
+            {
+                var panelPos = e2HttpProtocol.PanelPositions[i];
+
+                var selectedBadges = new List<Badge>();
+                foreach (var badge in badges)
+                {
+                    if (badge.Position.X >= panelPos.X && badge.Position.X <= panelPos.X + 4 &&
+                        badge.Position.Y >= panelPos.Y && badge.Position.Y <= panelPos.Y + 10)
+                    {
+                        var x = badge.Position.X - panelPos.X;
+                        var y = badge.Position.Y - panelPos.Y;
+                        var selectedBadge = new Badge();
+                        selectedBadge.Position = new Position(x, y);
+                        selectedBadge.BadgeType = badge.BadgeType;
+                        selectedBadges.Add(selectedBadge);
+                    }
+                }
+
+
+                BadgeElement selectedBadgeElement = null;
+                foreach (var badgeElement in e2HttpProtocol.BadgeElements)
+                {
+                    if (badgeElement.AllocatedBadges.Count != selectedBadges.Count)
+                        continue;
+
+                    bool found = true;
+                    foreach (var selectedBadge in selectedBadges)
+                    {
+                        if (!badgeElement.AllocatedBadges.Any(s =>
+                            s.Position.X == selectedBadge.Position.X && s.Position.Y == selectedBadge.Position.Y &&
+                            s.BadgeType == selectedBadge.BadgeType))
+                        {
+                            found = false;
+                            break;
+                        }
+                    }
+
+                    if (found)
+                    {
+                        selectedBadgeElement = badgeElement;
+                        break;
+                    }
+                }
+
+                var index = e2HttpProtocol.BadgeElements.ToList().IndexOf(selectedBadgeElement);
+                resultInt.Add(index);
+            }
+
+
+            for (int i = 0; i < 10; ++i)
+            {
+                finalInt += resultInt[i] * BigInteger.Pow(54, 10 - i - 1);
+            }
+
+            return finalInt;
+        }
+
+
+        public static List<Badge> GenerateBadges(BigInteger transactionInt)
+        {
+            var results = transactionInt.ToBaseX(54);
+            while (results.Count < 10)
+            {
+                results.Insert(0, 0);
+            }
+
+
+            var badges = new List<Badge>();
+            var e2HttpProtocol = new E2HttpProtocol();
+            for (int i = 0; i < 10; ++i)
+            {
+                var panelPos = e2HttpProtocol.PanelPositions[i];
+                foreach (var badgeElement in e2HttpProtocol.BadgeElements[results[i]].AllocatedBadges)
+                {
+                    var badge = new Badge();
+                    badge.Position = new Position(panelPos.X + badgeElement.Position.X, panelPos.Y + badgeElement.Position.Y);
+                    badge.BadgeType = badgeElement.BadgeType;
+                    badges.Add(badge);
+                }
+            }
+
+            return badges;
+        }
+
 
         public void InitializePanelPositions()
         {
