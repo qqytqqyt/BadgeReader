@@ -17,8 +17,9 @@ namespace Encoder
         ///     Decode badges to content
         /// </summary>
         /// <param name="badges"></param>
+        /// <param name="receiver"></param>
         /// <returns></returns>
-        public string Decode(List<Badge> badges)
+        public string Decode(List<Badge> badges, string receiver = "")
         {
             var finalText = string.Empty;
 
@@ -29,7 +30,7 @@ namespace Encoder
             finalText += finalInt.ToBinaryString();
 
             // transaction
-            var contentInt = ReadTransactionCode(finalInt, out var protocolType);
+            var contentInt = ReadTransactionCode(finalInt, receiver, out var protocolType);
 
             // application
             var chars = ContentEncoder.DecodeContent(protocolType, contentInt);
@@ -42,7 +43,7 @@ namespace Encoder
             return finalText;
         }
 
-        private static BigInteger ReadTransactionCode(BigInteger finalInt, out int protocolType)
+        private static BigInteger ReadTransactionCode(BigInteger finalInt, string receiver, out int protocolType)
         {
             // bit 22 - 56 -> Body text
             var contentInt = finalInt & 0x7FFFFFFFF;
@@ -58,6 +59,7 @@ namespace Encoder
 
             // bit 1 - 13 -> ID / Extended body text
             var extendedData = finalInt & 0x1FFF;
+            
             finalInt >>= 13;
 
             // bit 0 -> type
@@ -71,11 +73,14 @@ namespace Encoder
             }
             else if (encode == EncodeType.Unicast)
             {
-                // TODO
+                var receiverCode = ContentEncoder.EncodeContent(Protocol.UNICODE, receiver, int.MaxValue) % 0x1FFF;
+                if (receiverCode != extendedData || string.IsNullOrEmpty(receiver))
+                    throw new Exception(@"Receiver mismatched");
             }
 
             if (checkSum != CheckSum(contentInt))
                 throw new Exception(@"Check sum failure");
+
             return contentInt;
         }
 
@@ -85,8 +90,9 @@ namespace Encoder
         /// <param name="encodeType"></param>
         /// <param name="protocol"></param>
         /// <param name="content"></param>
+        /// <param name="receiver"></param>
         /// <returns></returns>
-        public List<Badge> Encode(EncodeType encodeType, Protocol protocol, string content)
+        public List<Badge> Encode(EncodeType encodeType, Protocol protocol, string content, string receiver = "")
         {
             BigInteger bigInt = 0;
             var maxDataBits = 35;
@@ -101,7 +107,7 @@ namespace Encoder
             var contentInt = ContentEncoder.EncodeContent(protocol, content, maxDataBits);
 
             // transaction
-            var transactionInt = GenerateTransactionCode(encodeType, protocol, bigInt, contentInt);
+            var transactionInt = GenerateTransactionCode(encodeType, protocol, bigInt, contentInt, receiver);
 
             // phyiscal
             var badges = E2HttpProtocol.GenerateBadges(transactionInt);
@@ -110,14 +116,15 @@ namespace Encoder
         }
 
         private static BigInteger GenerateTransactionCode(EncodeType encodeType, Protocol protocol, BigInteger bigInt,
-            BigInteger contentInt)
+            BigInteger contentInt, string receiver)
         {
             // bit 1 - 13 -> ID / Extended body text
             bigInt <<= 13;
 
             if (encodeType == EncodeType.Unicast)
             {
-                // TODO
+                var receiverInt = ContentEncoder.EncodeContent(Protocol.UNICODE, receiver, int.MaxValue);
+                bigInt |= receiverInt % 0x1FFF;
             }
             else if (encodeType == EncodeType.Broadcast)
             {

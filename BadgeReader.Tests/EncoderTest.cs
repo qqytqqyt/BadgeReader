@@ -32,6 +32,58 @@ namespace BadgeReader.Tests
             }
         }
 
+        [TestMethod]
+        public void TestAsciiUnicast()
+        {
+            var ran = new Random();
+            for (int length = 1; length <= 6; ++length)
+            {
+                for (int attempts = 0; attempts < 50000; ++attempts)
+                {
+                    var text = string.Empty;
+                    for (int i = 0; i < length; ++i)
+                    {
+                        text += (char)ran.Next(33, 127);
+                    }
+                    Console.WriteLine(text);
+                    var badges = new Encoder.Encoder().Encode(EncodeType.Unicast, Protocol.ASCII, text, "Aurehen#1115");
+                    var result = new Encoder.Encoder().Decode(badges, "Aurehen#1115");
+
+                    result = result.Substring(0, length);
+                    Assert.AreEqual(text, result);
+                }
+            }
+        }
+
+        [TestMethod]
+        public void TestAsciiUnicast_MismatchId_ShouldFail()
+        {
+            var ran = new Random();
+            for (int length = 1; length <= 5; ++length)
+            {
+                for (int attempts = 0; attempts < 50000; ++attempts)
+                {
+                    var text = string.Empty;
+                    for (int i = 0; i < length; ++i)
+                    {
+                        text += (char)ran.Next(33, 127);
+                    }
+                    Console.WriteLine(text);
+                    var badges = new Encoder.Encoder().Encode(EncodeType.Unicast, Protocol.ASCII, text, "Aurehen#1115");
+                    try
+                    {
+                        var result = new Encoder.Encoder().Decode(badges, "Aurehen#1116");
+                    }
+                    catch (Exception e)
+                    {
+                        Assert.IsTrue(e.Message.Contains(@"mismatch"));
+                        return;
+                    }
+
+                    Assert.Fail(@"User should not receive this cast.");
+                }
+            }
+        }
 
         [TestMethod]
         public void TestUnicodeBroadCast()
@@ -55,6 +107,65 @@ namespace BadgeReader.Tests
 
                     result = result.Substring(0, length);
                     Assert.AreEqual(text, result);
+                }
+            }
+        }
+
+        [TestMethod]
+        public void TestUnicodeUniCast()
+        {
+            var ranges = new[]
+            {
+                new Range(0x4e00, 0x4f80),
+                new Range(0x5000, 0x9fa0),
+                new Range(0x3400, 0x4db0),
+                new Range(0x30a0, 0x30f0)
+            };
+
+            for (int length = 1; length <= 2; ++length)
+            {
+                for (int attempts = 0; attempts < 50000; ++attempts)
+                {
+                    var text = GenerateString(length, ranges);
+                    var receiver = GenerateString(8, ranges);
+                    var badges = new Encoder.Encoder().Encode(EncodeType.Unicast, Protocol.UNICODE, text, receiver);
+                    var result = new Encoder.Encoder().Decode(badges, receiver);
+
+                    result = result.Substring(0, length);
+                    Assert.AreEqual(text, result);
+                }
+            }
+        }
+
+        [TestMethod]
+        public void TestUnicodeUniCast_MismatchId_ShouldFail()
+        {
+            var ranges = new[]
+            {
+                new Range(0x4e00, 0x4f80),
+                new Range(0x5000, 0x9fa0),
+                new Range(0x3400, 0x4db0),
+                new Range(0x30a0, 0x30f0)
+            };
+
+            var ran = new Random();
+            for (int length = 1; length <= 2; ++length)
+            {
+                for (int attempts = 0; attempts < 50000; ++attempts)
+                {
+                    var text = GenerateString(length, ranges);
+                    var badges = new Encoder.Encoder().Encode(EncodeType.Unicast, Protocol.UNICODE, text, "Aurehen#1115");
+                    try
+                    {
+                        var result = new Encoder.Encoder().Decode(badges, "Aurehen#1116");
+                    }
+                    catch (Exception e)
+                    {
+                        Assert.IsTrue(e.Message.Contains(@"mismatch"));
+                        return;
+                    }
+
+                    Assert.Fail(@"User should not receive this cast.");
                 }
             }
         }
