@@ -36,7 +36,7 @@ namespace BadgeReader.Tests
         public void TestAsciiUnicast()
         {
             var ran = new Random();
-            for (int length = 1; length <= 6; ++length)
+            for (int length = 1; length <= 5; ++length)
             {
                 for (int attempts = 0; attempts < 50000; ++attempts)
                 {

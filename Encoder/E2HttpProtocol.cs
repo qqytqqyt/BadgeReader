@@ -342,9 +342,9 @@ namespace Encoder
             badge = new Badge { Position = new Position(4, 4), BadgeType = BadgeType.Small };
             BadgeElements[50].AllocatedBadges.Add(badge);
 
-            badge = new Badge { Position = new Position(2, 10), BadgeType = BadgeType.Small };
+            badge = new Badge { Position = new Position(4, 4), BadgeType = BadgeType.Small };
             BadgeElements[51].AllocatedBadges.Add(badge);
-            badge = new Badge { Position = new Position(1, 5), BadgeType = BadgeType.Small };
+            badge = new Badge { Position = new Position(1, 9), BadgeType = BadgeType.Small };
             BadgeElements[51].AllocatedBadges.Add(badge);
 
             // 52, 53
